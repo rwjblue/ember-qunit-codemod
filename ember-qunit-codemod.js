@@ -129,10 +129,18 @@ module.exports = function(file, api, options) {
   function updateEmberTestHelperImports() {
     let specifiers = new Set();
 
-    ['render', 'clearRender'].forEach(type => {
-      let usages = findTestHelperUsageOf(root, type);
-      if (usages.size() > 0) {
-        specifiers.add(type);
+    let programPath = root.get('program');
+    let bodyPath = programPath.get('body');
+    bodyPath.each(expressionPath => {
+      let expression = expressionPath.node;
+      let isTest = j.match(expression, { expression: { callee: { name: 'test' } } });
+      if (isTest) {
+        ['render', 'clearRender'].forEach(type => {
+          let usages = findTestHelperUsageOf(j(expression), type);
+          if (usages.size() > 0) {
+            specifiers.add(type);
+          }
+        });
       }
     });
 

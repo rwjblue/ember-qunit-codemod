@@ -32,20 +32,22 @@ module.exports = function(file, api) {
       }
 
       let setupIdentifier = calleeName === 'module' ? null : 'setupTest';
-      if (options) {
-        let hasIntegration = options.properties.some(p => p.key.name === 'integration');
 
-        if (calleeName === `moduleForComponent`) {
-          if (hasIntegration) {
-            setupIdentifier = 'setupRenderingTest';
-            subject = null;
-          } else {
-            subject = j.literal(`component:${calleeArguments[0].value}`);
-          }
-        } else if (calleeName === 'moduleForModel') {
-          subject = j.literal(`model:${calleeArguments[0].value}`);
+      if (calleeName === `moduleForComponent`) {
+        let hasUnitOrNeeds =
+          options && options.properties.some(p => p.key.name === 'unit' || p.key.name === 'needs');
+
+        if (!hasUnitOrNeeds) {
+          setupIdentifier = 'setupRenderingTest';
+          subject = null;
+        } else {
+          subject = j.literal(`component:${calleeArguments[0].value}`);
         }
+      } else if (calleeName === 'moduleForModel') {
+        subject = j.literal(`model:${calleeArguments[0].value}`);
+      }
 
+      if (options) {
         hasCustomSubject = options.properties.some(p => p.key.name === 'subject');
       }
 

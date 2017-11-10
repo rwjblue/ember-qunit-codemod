@@ -76,3 +76,11 @@ module('Integration | Component | FooBar', function(hooks) {
     });
   });
 });
+
+module('Integration | Component | FooBar', function(hooks) {
+  setupRenderingTest(hooks);
+
+  test('it happens', async function() {
+    await render(hbs`derp`);
+  });
+});

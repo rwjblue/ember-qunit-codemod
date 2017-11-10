@@ -73,3 +73,9 @@ test('can use render in custom method', function (assert) {
     assert.equal(this._element.textContent, 'derp');
   });
 });
+
+moduleForComponent('foo-bar', 'Integration | Component | FooBar');
+
+test('it happens', function() {
+  this.render(hbs`derp`);
+});

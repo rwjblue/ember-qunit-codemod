@@ -24,8 +24,10 @@ test('has some thing', function (assert) {
   let subject = this.subject();
 });
 
-test('has another thing', function (assert) {
-  let subject = this.subject({ size: 'big' });
+['big', 'small'].forEach((size) => {
+  test('has another thing', function (assert) {
+    let subject = this.subject({ size });
+  });
 });
 
 moduleForModel('foo', 'Integration | Model | Foo', {

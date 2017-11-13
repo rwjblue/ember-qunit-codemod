@@ -54,8 +54,10 @@ module('Unit | Component | FooBar', function(hooks) {
     let subject = this.owner.factoryFor('component:foo-bar').create();
   });
 
-  test('has another thing', function (assert) {
-    let subject = this.owner.factoryFor('component:foo-bar').create({ size: 'big' });
+  ['big', 'small'].forEach((size) => {
+    test('has another thing', function (assert) {
+      let subject = this.owner.factoryFor('component:foo-bar').create({ size });
+    });
   });
 });
 

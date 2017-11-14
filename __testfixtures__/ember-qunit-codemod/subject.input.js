@@ -24,7 +24,7 @@ test('has some thing', function (assert) {
   let subject = this.subject();
 });
 
-['big', 'small'].forEach((size) => {
+['big', 'small'].forEach(function (size) {
   test('has another thing', function (assert) {
     let subject = this.subject({ size });
   });

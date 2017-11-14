@@ -54,7 +54,7 @@ module('Unit | Component | FooBar', function(hooks) {
     let subject = this.owner.factoryFor('component:foo-bar').create();
   });
 
-  ['big', 'small'].forEach((size) => {
+  ['big', 'small'].forEach(function (size) {
     test('has another thing', function (assert) {
       let subject = this.owner.factoryFor('component:foo-bar').create({ size });
     });

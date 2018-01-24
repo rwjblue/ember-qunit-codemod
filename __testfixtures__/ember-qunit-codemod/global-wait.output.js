@@ -1,10 +1,14 @@
-import { test } from 'qunit';
-import moduleForAcceptance from '../helpers/module-for-acceptance';
+import { module, test } from 'qunit';
+import { setupApplicationTest } from 'ember-qunit';
+import { visit } from '@ember/test-helpers';
 
-moduleForAcceptance('something');
+module('something', function(hooks) {
+  setupApplicationTest(hooks);
 
-test('uses global helpers', function(assert) {
-  visit('/something');
+  test('uses global helpers', async function(assert) {
+    await visit('/something');
 
-  wait().then(() => assert.ok(true));
+    wait().then(() => assert.ok(true));
+  });
 });
+

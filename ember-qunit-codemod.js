@@ -456,8 +456,18 @@ module.exports = function(file, api) {
       });
 
       // Second - Transform to await visit(), click, fillIn, touch, etc and adds `async` to scope
-      ['visit', 'find', 'waitFor', 'fillIn', 'click', 'blur', 'focus', 'tap',
-        'triggerEvent', 'triggerKeyEvent'].forEach(type => {
+      [
+        'visit',
+        'find',
+        'waitFor',
+        'fillIn',
+        'click',
+        'blur',
+        'focus',
+        'tap',
+        'triggerEvent',
+        'triggerKeyEvent',
+      ].forEach(type => {
         findApplicationTestHelperUsageOf(testExpressionCollection, type).forEach(p => {
           specifiers.add(type);
 
@@ -473,15 +483,14 @@ module.exports = function(file, api) {
 
       // Third - update call expressions that do not await
       ['currentURL', 'currentRouteName'].forEach(type => {
-        testExpressionCollection.find(j.CallExpression, {
-          callee: {
-            type: 'Identifier',
-            name: type,
-          },
-        })
-        .forEach(() => {
-          specifiers.add(type);
-        });
+        testExpressionCollection
+          .find(j.CallExpression, {
+            callee: {
+              type: 'Identifier',
+              name: type,
+            },
+          })
+          .forEach(() => specifiers.add(type));
       });
 
       ensureImportWithSpecifiers({

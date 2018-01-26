@@ -215,25 +215,6 @@ module.exports = function(file, api) {
       });
   }
 
-  function findTestBlock(collection) {
-    return collection.find(j.FunctionExpression, {
-      body: {
-        type: 'BlockStatement',
-      },
-    });
-  }
-
-  // returns whether passed in child is an andThen block
-  function isAndThen(blockStatementChildren) {
-    let x = j(blockStatementChildren).find(j.CallExpression, {
-      callee: {
-        type: 'Identifier',
-        name: 'andThen',
-      },
-    });
-    return !!x.size();
-  }
-
   function findApplicationTestHelperUsageOf(collection, property) {
     return collection.find(j.ExpressionStatement, {
       expression: {
@@ -427,33 +408,32 @@ module.exports = function(file, api) {
       return moduleInfo;
     }
 
+    function removeAndThens(testExpressionCollection) {
+      let replacements = testExpressionCollection
+        .find(j.CallExpression, {
+          callee: {
+            name: 'andThen',
+          },
+        })
+        .map(path => path.parent)
+        .replaceWith(({ node }) => {
+          let body = node.expression.arguments[0].body;
+          return body.body;
+        });
+
+      if (replacements.length > 0) {
+        removeAndThens(testExpressionCollection);
+      }
+    }
+
     function processExpressionForApplicationTest(testExpression) {
       // mark the test function as an async function
       let testExpressionCollection = j(testExpression);
       // collect all potential statements to be imported
       let specifiers = new Set();
-      // collect all expressions and flatten andThen arrowFunctionExpression
-      let expressions = new Set();
 
       // First - remove andThen blocks
-      findTestBlock(testExpressionCollection).forEach(block => {
-        // loop through each item in test function block
-        block.value.body.body.forEach(b => {
-          if (!isAndThen(b)) {
-            // if not andThen, add the ExpressionStatement
-            expressions.add(b);
-          } else {
-            // if andThen, grab each expression from the containing BlockStatement
-            let andThenExpressions = b.expression.arguments[0].body.body;
-            andThenExpressions.forEach(e => {
-              expressions.add(e);
-            });
-          }
-        });
-
-        // reset body to collected expression statements
-        block.value.body.body = Array.from(expressions);
-      });
+      removeAndThens(testExpressionCollection);
 
       // Second - Transform to await visit(), click, fillIn, touch, etc and adds `async` to scope
       [

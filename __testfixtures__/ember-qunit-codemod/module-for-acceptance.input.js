@@ -80,6 +80,17 @@ test('it works with nested', function() {
   });
 });
 
+test('it works with nested andThens', function() {
+  visit('my-route');
+  andThen(function() {
+    assert.equal(currenURL(), 'my-route');
+    visit('other-route');
+    andThen(function() {
+      assert.equal(currenURL(), 'other-route');
+    });
+  });
+});
+
 test('it works with assert.expect', function() {
   assert.expect(2);
   visit('my-route');

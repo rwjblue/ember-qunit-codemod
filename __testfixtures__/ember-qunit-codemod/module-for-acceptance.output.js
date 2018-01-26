@@ -75,6 +75,13 @@ module('Acceptance | AndThenRoute', function(hooks) {
     assert.equal(currenURL(), 'other-route');
   });
 
+  test('it works with nested andThens', async function() {
+    await visit('my-route');
+    assert.equal(currenURL(), 'my-route');
+    await visit('other-route');
+    assert.equal(currenURL(), 'other-route');
+  });
+
   test('it works with assert.expect', async function() {
     assert.expect(2);
     await visit('my-route');

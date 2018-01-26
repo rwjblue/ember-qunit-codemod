@@ -7,6 +7,7 @@ module.exports = function(file, api) {
     { expression: { callee: { name: 'moduleFor' } } },
     { expression: { callee: { name: 'moduleForComponent' } } },
     { expression: { callee: { name: 'moduleForModel' } } },
+    { expression: { callee: { name: 'moduleForAcceptance' } } },
   ];
 
   class ModuleInfo {
@@ -37,7 +38,10 @@ module.exports = function(file, api) {
         hasCustomSubject = options.properties.some(p => p.key.name === 'subject');
       }
 
-      if (calleeName === `moduleForComponent`) {
+      if (calleeName === `moduleForAcceptance`) {
+        setupIdentifier = 'setupApplicationTest';
+        subject = null;
+      } else if (calleeName === `moduleForComponent`) {
         if (hasIntegrationFlag) {
           setupIdentifier = 'setupRenderingTest';
           subject = null;
@@ -183,6 +187,43 @@ module.exports = function(file, api) {
     if (emberQUnitSpecifiers.size === 0) {
       emberQUnitImports.remove();
     }
+  }
+
+  // find moduleForAcceptance import and replace with 'module'
+  function migrateModuleForAcceptanceTests() {
+    let imports = root.find(j.ImportDeclaration);
+    imports
+      .find(j.ImportDefaultSpecifier, {
+        local: {
+          type: 'Identifier',
+          name: 'moduleForAcceptance',
+        },
+      })
+      .forEach(p => {
+        // add module import
+        ensureImportWithSpecifiers({
+          source: 'qunit',
+          specifiers: ['module'],
+        });
+        // add setupApplicationTest import
+        ensureImportWithSpecifiers({
+          source: 'ember-qunit',
+          specifiers: ['setupApplicationTest'],
+        });
+        // remove existing moduleForAcceptance import
+        j(p.parentPath.parentPath).remove();
+      });
+  }
+
+  function findApplicationTestHelperUsageOf(collection, property) {
+    return collection.find(j.ExpressionStatement, {
+      expression: {
+        callee: {
+          type: 'Identifier',
+          name: property,
+        },
+      },
+    });
   }
 
   function findTestHelperUsageOf(collection, property) {
@@ -365,6 +406,79 @@ module.exports = function(file, api) {
       }
 
       return moduleInfo;
+    }
+
+    function removeAndThens(testExpressionCollection) {
+      let replacements = testExpressionCollection
+        .find(j.CallExpression, {
+          callee: {
+            name: 'andThen',
+          },
+        })
+        .map(path => path.parent)
+        .replaceWith(({ node }) => {
+          let body = node.expression.arguments[0].body;
+          return body.body;
+        });
+
+      if (replacements.length > 0) {
+        removeAndThens(testExpressionCollection);
+      }
+    }
+
+    function processExpressionForApplicationTest(testExpression) {
+      // mark the test function as an async function
+      let testExpressionCollection = j(testExpression);
+      // collect all potential statements to be imported
+      let specifiers = new Set();
+
+      // First - remove andThen blocks
+      removeAndThens(testExpressionCollection);
+
+      // Second - Transform to await visit(), click, fillIn, touch, etc and adds `async` to scope
+      [
+        'visit',
+        'find',
+        'waitFor',
+        'fillIn',
+        'click',
+        'blur',
+        'focus',
+        'tap',
+        'triggerEvent',
+        'triggerKeyEvent',
+      ].forEach(type => {
+        findApplicationTestHelperUsageOf(testExpressionCollection, type).forEach(p => {
+          specifiers.add(type);
+
+          let expression = p.get('expression');
+
+          let awaitExpression = j.awaitExpression(
+            j.callExpression(j.identifier(type), expression.node.arguments)
+          );
+          expression.replace(awaitExpression);
+          p.scope.node.async = true;
+        });
+      });
+
+      // Third - update call expressions that do not await
+      ['currentURL', 'currentRouteName'].forEach(type => {
+        testExpressionCollection
+          .find(j.CallExpression, {
+            callee: {
+              type: 'Identifier',
+              name: type,
+            },
+          })
+          .forEach(() => specifiers.add(type));
+      });
+
+      ensureImportWithSpecifiers({
+        source: '@ember/test-helpers',
+        anchor: 'ember-qunit',
+        specifiers,
+        positionMethod: 'insertAfter',
+      });
     }
 
     function processExpressionForRenderingTest(testExpression) {
@@ -555,7 +669,9 @@ module.exports = function(file, api) {
           updateGetOwnerThisUsage(j(expression.expression.arguments[1]));
           processStore(expression, currentModuleInfo);
 
-          if (currentModuleInfo.setupType === 'setupRenderingTest') {
+          if (currentModuleInfo.setupType === 'setupApplicationTest') {
+            processExpressionForApplicationTest(expression);
+          } else if (currentModuleInfo.setupType === 'setupRenderingTest') {
             processExpressionForRenderingTest(expression);
           } else if (
             currentModuleInfo.setupType === 'setupTest' &&
@@ -790,6 +906,7 @@ module.exports = function(file, api) {
 
   moveQUnitImportsFromEmberQUnit();
   updateToNewEmberQUnitImports();
+  migrateModuleForAcceptanceTests();
   updateModuleForToNestedModule();
   updateWaitUsage();
 

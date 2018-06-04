@@ -30,7 +30,7 @@
     "eslint-config-prettier": "^2.9.0",
     "eslint-plugin-prettier": "^2.6.0",
     "jest": "^22.4.4",
-    "prettier": "^1.12.1"
+    "prettier": "^1.13.4"
   },
   "engines": {
     "node": ">=4"

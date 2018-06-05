@@ -22,7 +22,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "jscodeshift": "^0.3.32"
+    "jscodeshift": "^0.5.1"
   },
   "devDependencies": {
     "babel-preset-env": "^1.7.0",

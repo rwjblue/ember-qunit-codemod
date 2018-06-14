@@ -6,10 +6,15 @@ This codemod is intended to automatically convert your projects from the older
 ## Installation
 
 ```sh
+npm install -g jscodeshift
 npm install -g ember-qunit-codemod
 ```
 
 ## Usage
+**WARNING**: `jscodeshift`, and thus this codemod, **edits your files in place**.
+It does not make a copy. Make sure your code is checked into a source control
+repository like Git and that you have no outstanding changes to commit before
+running this tool.
 
 ```sh
 ember-qunit-codemod ./tests/

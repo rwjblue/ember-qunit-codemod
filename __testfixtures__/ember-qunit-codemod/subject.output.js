@@ -26,8 +26,10 @@ module('Unit | Model | Foo', function(hooks) {
     let subject = run(() => this.owner.lookup('service:store').createRecord('foo'));
   });
 
-  test('has another thing', function (assert) {
-    let subject = run(() => this.owner.lookup('service:store').createRecord('foo', { size: 'big' }));
+  ['big', 'small'].forEach(function (size) {
+    test('has another thing', function (assert) {
+      let subject = this.owner.factoryFor('component:foo-bar').create({ size });
+    });
   });
 });
 

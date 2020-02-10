@@ -861,6 +861,12 @@ module.exports = function(file, api) {
     }
   }
 
+  function flatten(node) {
+    const isBE = node.type === 'BinaryExpression';
+    const isPLUS = node.operator === '+';
+    return isBE && isPLUS ? [...flatten(node.left), ...flatten(node.right)] : [node];
+  }
+
   function updateInjectCalls(ctx) {
     ctx
       .find(j.CallExpression, {
@@ -878,13 +884,16 @@ module.exports = function(file, api) {
       })
       .forEach(p => {
         let injectType = p.node.callee.property.name;
-        let injectedName = p.node.arguments[0].value;
+        let injectedName = flatten(p.node.arguments[0])
+          .map(node => node.value)
+          .join('');
         let localName = injectedName;
         if (p.node.arguments[1]) {
           let options = p.node.arguments[1];
           let as = options.properties.find(property => property.key.name === 'as');
           if (as) {
-            localName = as.value.value;
+            let flattenValue = flatten(as.value);
+            localName = flattenValue.map(node => node.value).join('');
           }
         }
         let property = j.identifier(localName);
